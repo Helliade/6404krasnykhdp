@@ -26,7 +26,7 @@ main.py
 
 import argparse
 import os
-
+import numpy as np
 import cv2
 
 from implementation import ImageProcessing
@@ -41,8 +41,11 @@ def main() -> None:
             "edges",
             "corners",
             "circles",
+            "conv",
+            "gray",
+            "gamma"
         ],
-        help="Метод обработки: edges, corners, circles",
+        help="Метод обработки: edges, corners, circles, conv, gray, gamma",
     )
     parser.add_argument(
         "input",
@@ -69,8 +72,18 @@ def main() -> None:
     elif args.method == "corners":
         result = processor.corner_detection(image)
     elif args.method == "circles":
+        #circle_detection пока не работает
         result = processor.circle_detection(image)
+    elif args.method == "conv":
+        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]) # Ядро для повышения резкости
+        result = processor.convolution(image, kernel)
+    elif args.method == "gray":
+        result = processor.rgb_to_grayscale(image, variant="new")
+    elif args.method == "gamma":
+        gamma_value = 2.2
+        result = processor.gamma_correction(image, gamma_value)
     else:
+        # Эта проверка избыточна из-за 'choices' в парсере, но не помешает
         print("Ошибка: неизвестный метод")
         return
 
@@ -79,7 +92,7 @@ def main() -> None:
         output_path = args.output
     else:
         base, ext = os.path.splitext(args.input)
-        output_path = f"{base}_result.png"
+        output_path = f"{base}_{args.method}_result.png"
 
     # Сохранение результата
     cv2.imwrite(output_path, result)
