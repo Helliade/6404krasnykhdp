@@ -27,7 +27,7 @@ class IImageProcessing(ABC):
     """
 
     @abstractmethod
-    def _convolution(self, image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    def convolution(self, image: np.ndarray, kernel: np.ndarray, variant: str = "new") -> np.ndarray:
         """
         Выполняет свёртку изображения с заданным ядром.
 
@@ -41,7 +41,7 @@ class IImageProcessing(ABC):
         pass
 
     @abstractmethod
-    def _rgb_to_grayscale(self, image: np.ndarray) -> np.ndarray:
+    def rgb_to_grayscale(self, image: np.ndarray, variant: str = "new") -> np.ndarray:
         """
         Преобразует RGB-изображение в оттенки серого.
 
@@ -54,7 +54,7 @@ class IImageProcessing(ABC):
         pass
 
     @abstractmethod
-    def _gamma_correction(self, image: np.ndarray, gamma: float) -> np.ndarray:
+    def gamma_correction(self, image: np.ndarray, gamma: float, variant: str = "new") -> np.ndarray:
         """
         Применяет гамма-коррекцию к изображению.
 
@@ -68,7 +68,7 @@ class IImageProcessing(ABC):
         pass
 
     @abstractmethod
-    def edge_detection(self, image: np.ndarray) -> np.ndarray:
+    def edge_detection(self, image: np.ndarray, variant: str = "new") -> np.ndarray:
         """
         Выполняет обнаружение границ на изображении.
 
@@ -81,7 +81,7 @@ class IImageProcessing(ABC):
         pass
 
     @abstractmethod
-    def corner_detection(self, image: np.ndarray) -> np.ndarray:
+    def corner_detection(self, image: np.ndarray, k: float = 0.04, threshold: float = 0.03, variant: str = "new") -> np.ndarray:
         """
         Выполняет обнаружение углов на изображении.
 
@@ -105,3 +105,31 @@ class IImageProcessing(ABC):
             np.ndarray: Изображение с выделенными окружностями.
         """
         pass
+
+class ICatImage(ABC):
+    """Интерфейс для класса CatImage из задания."""
+    
+    @abstractmethod
+    def detect_edges_custom(self) -> np.ndarray:
+        """Пользовательский метод выделения контуров."""
+        pass
+    
+    @abstractmethod
+    def detect_edges_library(self) -> np.ndarray:
+        """Библиотечный метод выделения контуров."""
+        pass
+    
+    @abstractmethod
+    def __add__(self, other):
+        """Сложение изображений."""
+        pass
+    
+    @abstractmethod
+    def __sub__(self, other):
+        """Вычитание изображений."""
+        pass
+    
+    @abstractmethod
+    def __str__(self) -> str:
+        """Строковое представление."""
+        pass    

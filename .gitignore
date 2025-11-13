@@ -6,3 +6,5 @@ __pycache__/
 .vscode/
 *.log
 .flake8
+processed_images/
+test_images/

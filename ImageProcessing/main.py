@@ -1,103 +1,63 @@
 """
 main.py
 
-Пример лабораторной работы по курсу "Технологии программирования на Python".
+Лабораторная работа No2 - Обработка изображений животных через API.
 
-Модуль предназначен для демонстрации работы с обработкой изображений с помощью библиотеки OpenCV.
-Реализован консольный интерфейс для применения различных методов обработки к изображению:
-- обнаружение границ (edges)
-- обнаружение углов (corners)
-- обнаружение окружностей (circles)
-
-Запуск:
-    python main.py <метод> <путь_к_изображению> [-o путь_для_сохранения]
-
-Аргументы:
-    метод: edges | corners | circles
-    путь_к_изображению: путь к входному изображению
-    -o, --output: путь для сохранения результата (по умолчанию: <имя_входного_файла>_result.png)
-
-Пример:
-    python main.py edges input.jpg
-    python main.py corners input.jpg -o corners_result.png
-
-Автор: [Ваше имя]
+Программа скачивает изображения кошек, обрабатывает их и сохраняет результаты.
 """
 
-import argparse
+import sys
 import os
-import numpy as np
-import cv2
+#from decorators import timer_decorator
+#import inspect
 
-from implementation import ImageProcessing
+# Добавляем корневую директорию в путь для импортов
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Обработка изображения с помощью методов ImageProcessing (OpenCV).",
-    )
-    parser.add_argument(
-        "method",
-        choices=[
-            "edges",
-            "corners",
-            "circles",
-            "conv",
-            "gray",
-            "gamma"
-        ],
-        help="Метод обработки: edges, corners, circles, conv, gray, gamma",
-    )
-    parser.add_argument(
-        "input",
-        help="Путь к входному изображению",
-    )
-    parser.add_argument(
-        "-o", "--output",
-        help="Путь для сохранения результата (по умолчанию: <input>_result.png)",
-    )
+from implementation.api_processor import CatImageProcessor
 
-    args = parser.parse_args()
+def main():
+    """Основная функция программы."""
+    try:
+        # Инициализация процессора
+        processor = CatImageProcessor()
 
-    # Загрузка изображения
-    image = cv2.imread(args.input)
-    if image is None:
-        print(f"Ошибка: не удалось загрузить изображение {args.input}")
-        return
-
-    processor = ImageProcessing()
-
-    # Выбор метода
-    if args.method == "edges":
-        result = processor.edge_detection(image)
-    elif args.method == "corners":
-        result = processor.corner_detection(image)
-    elif args.method == "circles":
-        #circle_detection пока не работает
-        result = processor.circle_detection(image)
-    elif args.method == "conv":
-        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]) # Ядро для повышения резкости
-        result = processor.convolution(image, kernel)
-    elif args.method == "gray":
-        result = processor.rgb_to_grayscale(image, variant="new")
-    elif args.method == "gamma":
-        gamma_value = 2.2
-        result = processor.gamma_correction(image, gamma_value)
-    else:
-        # Эта проверка избыточна из-за 'choices' в парсере, но не помешает
-        print("Ошибка: неизвестный метод")
-        return
-
-    # Определение пути для сохранения
-    if args.output:
-        output_path = args.output
-    else:
-        base, ext = os.path.splitext(args.input)
-        output_path = f"{base}_{args.method}_result.png"
-
-    # Сохранение результата
-    cv2.imwrite(output_path, result)
-    print(f"Результат сохранён в {output_path}")
-
+        #CatImageProcessor._url_to_array = timer_decorator(CatImageProcessor._url_to_array)
+        #print(inspect.getsource(CatImageProcessor._url_to_array))
+        
+        # Запрос количества изображений у пользователя
+        while True:
+            try:
+                limit = int(input("Введите количество изображений для обработки (1-10): "))
+                if 1 <= limit <= 10:
+                    break
+                else:
+                    print("Пожалуйста, введите число от 1 до 10")
+            except ValueError:
+                print("Пожалуйста, введите корректное число")
+        
+        # Основной процесс
+        print("=" * 50)
+        cat_images = processor.download_images(limit)
+        
+        print("=" * 50)
+        processor.process_and_save_images(cat_images)
+        
+        print("=" * 50)
+        processor.demonstrate_operations(cat_images)
+        
+        print("=" * 50)
+        print("Программа успешно завершена!")
+        
+        # Вывод информации о скачанных изображениях
+        print("\nСкачанные изображения:")
+        for i, img in enumerate(cat_images, 1):
+            print(f"{i}. {img}")
+            
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
+    

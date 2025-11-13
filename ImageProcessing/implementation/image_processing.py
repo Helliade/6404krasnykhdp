@@ -250,7 +250,7 @@ class ImageProcessing(interfaces.IImageProcessing):
                 output_image = image
 
             else:
-                output_image = np.power(image.astype(np.float32) / 255.0, gamma)*255
+                output_image = np.power(image.astype(np.float64) / 255.0, gamma)*255
         
         else:
             output_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)

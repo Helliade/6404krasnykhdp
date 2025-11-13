@@ -1,1 +1,1 @@
-from .i_image_processing import IImageProcessing
+from .i_image_processing import IImageProcessing, ICatImage
