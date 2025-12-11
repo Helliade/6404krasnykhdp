@@ -37,26 +37,54 @@ class DataProcessor:
     @staticmethod
     def aggregate_by_country(data_stream: Generator[pd.DataFrame, None, None]) -> pd.DataFrame:
         """Агрегирует данные по странам в DataFrame."""
-        all_data = []
+        result_agg = None
         
-        for data_frame in data_stream:            
-            all_data.append(data_frame)
-        if not all_data:
+        for data_frame in data_stream:
+            if data_frame.empty:
+                continue
+                
+            # Агрегируем текущий чанк
+            chunk_agg = data_frame.groupby('country').agg({
+                'emissions': 'sum',
+                'population': 'sum',
+                'gdp': 'sum',
+                'emissions_per_capita': ['sum', 'count']  # sum для сложения, count для подсчета
+            })
+            
+            if result_agg is None:
+                result_agg = chunk_agg
+            else:
+                result_agg = result_agg.add(chunk_agg, fill_value=0)  # отсутствующие значения считаются 0
+        
+        if result_agg is None:
             return pd.DataFrame()
         
-        # Объединяем все данные
-        combined_df = pd.concat(all_data, ignore_index=True)
+        # Распрямляем мультииндекс столбцов
+        result_agg.columns = [
+            'emissions_sum', 
+            'population_sum', 
+            'gdp_sum', 
+            'emissions_per_capita_sum', 
+            'emissions_per_capita_count'
+        ]
         
-        # Агрегируем по странам (словарь для агрегации)
-        country_agg = combined_df.groupby('country').agg({
-            'emissions': 'sum',
-            'population': 'sum', 
-            'gdp': 'sum',
-            'emissions_per_capita': 'mean'
-        }).reset_index()
-        country_agg.columns = ['country', 'total_emissions', 'total_population', 'total_gdp', 'avg_emissions_per_capita']
+        # Вычисляем среднее для emissions_per_capita
+        result_agg['avg_emissions_per_capita'] = (
+            result_agg['emissions_per_capita_sum'] / result_agg['emissions_per_capita_count']
+        ).fillna(0)
         
-        return country_agg
+        # Сбрасываем индекс и переименовываем столбцы
+        result_agg = result_agg.reset_index()
+        
+        final_result = pd.DataFrame({
+            'country': result_agg['country'],
+            'total_emissions': result_agg['emissions_sum'],
+            'total_population': result_agg['population_sum'],
+            'total_gdp': result_agg['gdp_sum'],
+            'avg_emissions_per_capita': result_agg['avg_emissions_per_capita']
+        })
+        
+        return final_result
     
     @staticmethod
     def get_time_series_data(data_stream: Generator[pd.DataFrame, None, None]) -> pd.DataFrame:
