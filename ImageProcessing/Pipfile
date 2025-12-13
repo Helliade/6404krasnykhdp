@@ -25,3 +25,11 @@ opencv-python = "*"
 
 [requires]
 python_version = "3.11"
+
+
+
+[packages]
+pillow = "*"
+python-dotenv = "*"
+aiohttp = "*"
+aiofiles = "*"

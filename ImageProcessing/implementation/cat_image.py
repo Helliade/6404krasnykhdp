@@ -1,17 +1,17 @@
 import numpy as np
-from typing import Union
+from typing import Union, Optional
 import cv2
-from typing import Optional
 from interfaces.i_image_processing import ICatImage
 from implementation.image_processing import ImageProcessing
 
 class CatImage(ICatImage):
     """Наследуемся от абстрактного базового класса для изображений по заданию из 2 ЛР."""
     
-    def __init__(self, image_array: np.ndarray, breed: str, image_url: str):
+    def __init__(self, image_array: np.ndarray, breed: str, image_url: str, index: Optional[int] = None):
         self._image_array = image_array
         self._breed = breed
         self._image_url = image_url
+        self._index = index  # Порядковый номер
         self._processor = ImageProcessing()
     
     @property
@@ -25,6 +25,10 @@ class CatImage(ICatImage):
     @property
     def image_url(self) -> str:
         return self._image_url
+
+    @property
+    def index(self) -> int:
+       return self._index if self._index is not None else 0
     
     def detect_edges_custom(self) -> np.ndarray:
         """Пользовательская реализация выделения контуров."""
