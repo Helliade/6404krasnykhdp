@@ -33,73 +33,38 @@ class DataProcessor:
             except Exception as e:
                 print(f"Ошибка при обработке чанка: {e}")
                 continue
-    
+        
     @staticmethod
-    def aggregate_by_country(data_stream: Generator[pd.DataFrame, None, None]) -> pd.DataFrame:
-        """Агрегирует данные по странам в DataFrame."""
-        result_agg = None
-        
-        for data_frame in data_stream:
-            if data_frame.empty:
-                continue
-                
-            # Агрегируем текущий чанк
-            chunk_agg = data_frame.groupby('country').agg({
-                'emissions': 'sum',
-                'population': 'sum',
-                'gdp': 'sum',
-                'emissions_per_capita': ['sum', 'count']  # sum для сложения, count для подсчета
-            })
-            
-            if result_agg is None:
-                result_agg = chunk_agg
-            else:
-                result_agg = result_agg.add(chunk_agg, fill_value=0)  # отсутствующие значения считаются 0
-        
-        if result_agg is None:
-            return pd.DataFrame()
-        
-        # Распрямляем мультииндекс столбцов
-        result_agg.columns = [
-            'emissions_sum', 
-            'population_sum', 
-            'gdp_sum', 
-            'emissions_per_capita_sum', 
-            'emissions_per_capita_count'
-        ]
-        
-        # Вычисляем среднее для emissions_per_capita
-        result_agg['avg_emissions_per_capita'] = (
-            result_agg['emissions_per_capita_sum'] / result_agg['emissions_per_capita_count']
-        ).fillna(0)
-        
-        # Сбрасываем индекс и переименовываем столбцы
-        result_agg = result_agg.reset_index()
-        
-        final_result = pd.DataFrame({
-            'country': result_agg['country'],
-            'total_emissions': result_agg['emissions_sum'],
-            'total_population': result_agg['population_sum'],
-            'total_gdp': result_agg['gdp_sum'],
-            'avg_emissions_per_capita': result_agg['avg_emissions_per_capita']
-        })
-        
-        return final_result
-    
-    @staticmethod
-    def get_time_series_data(data_stream: Generator[pd.DataFrame, None, None]) -> pd.DataFrame:
+    def aggregate(data_stream: Generator[pd.DataFrame, None, None]) -> pd.DataFrame:
         """Возвращает данные временных рядов для анализа."""
-        all_data = []
+        result = pd.DataFrame()
         
-        for data_frame in data_stream:            
-            all_data.append(data_frame)
-        if not all_data:
+        for df in data_stream:
+            result = result._append(df, ignore_index=True)
+        
+        return result
+    
+    @staticmethod
+    def aggregate_by_country(time_series_data: pd.DataFrame) -> pd.DataFrame:
+        """Агрегирует данные по странам в DataFrame."""
+        if time_series_data.empty:
             return pd.DataFrame()
         
-        # Объединяем все данные
-        combined_df = pd.concat(all_data, ignore_index=True)
+        aggregated = time_series_data.groupby('country').agg({
+            'emissions': 'sum',
+            'population': 'sum', 
+            'gdp': 'sum'
+        }).reset_index()
         
-        return combined_df
+        # Переименовываем столбцы
+        aggregated.columns = ['country', 'total_emissions', 'total_population', 'total_gdp']
+        
+        # Вычисляем корректные выбросы на душу населения total_emissions / total_population
+        aggregated['avg_emissions_per_capita'] = (
+            aggregated['total_emissions'] / aggregated['total_population']
+        ).where(aggregated['total_population'] > 0, 0)
+        
+        return aggregated
     
     @staticmethod
     def analyze_emissions(country_data: pd.DataFrame) -> pd.DataFrame:
@@ -134,7 +99,7 @@ class DataProcessor:
         if time_series_data.empty:
             return pd.DataFrame()
         
-        # Вычисляем дисперсию по годам для каждой страны
+        # Вычисляем дисперсию (var()) по годам для каждой страны
         variance_by_country = time_series_data.groupby('country')['emissions'].var().reset_index()
         variance_by_country.columns = ['country', 'variance']
         
@@ -184,19 +149,11 @@ class DataProcessor:
             return pd.Series([0, 0])
         
         mean = data.mean()
-        std_err = data.std(ddof=1) / np.sqrt(len(data))
+        std_err = data.std(ddof=1) / np.sqrt(len(data))   # std = sqrt( Σ(xᵢ - mean)² / (n-1) )
         z_score = 1.96  # Для 95% доверительного уровня
         
         margin_of_error = z_score * std_err
         return pd.Series([mean - margin_of_error, mean + margin_of_error])
-    
-    @staticmethod
-    def calculate_moving_average(data: pd.Series, window: int = 3) -> pd.Series:
-        """Вычисляет скользящее среднее для временного ряда."""
-        if len(data) < window:
-            return data
-        
-        return data.rolling(window=window, min_periods=1).mean()
     
     @staticmethod
     def analyze_temporal_trends(time_series_data: pd.DataFrame, window_size: int = 5) -> pd.DataFrame:
@@ -215,6 +172,14 @@ class DataProcessor:
         yearly_totals['emissions_moving_avg'] = DataProcessor.calculate_moving_average(yearly_totals['emissions'], window_size)
         
         return yearly_totals
+    
+    @staticmethod
+    def calculate_moving_average(data: pd.Series, window: int = 3) -> pd.Series:
+        """Вычисляет скользящее среднее для временного ряда."""
+        if len(data) < window:
+            return data
+        
+        return data.rolling(window=window, min_periods=1).mean()
     
     @staticmethod
     def calculate_correlation(parquet_reader, columns: list) -> float:

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from implementation.data_reader import DataReader
-from implementation.data_processors import DataProcessor
+from implementation.data_processors import DataProcessor as DP
 from implementation.visualization import Visualization
 
 def main():
@@ -26,25 +26,22 @@ def main():
         data_reader.compare_read_speed()
         
         # ПАЙПЛАЙН: Чтение -> Извлечение -> Агрегация
-        time_series_data = DataProcessor.get_time_series_data(
-            DataProcessor.extract_emission_data(
-                data_reader.read_csv_chunks(chunksize=1000)
-            )
-        )
+        time_series_data = DP.aggregate(         # собираем все чанки в 1 датафрейм
+            DP.extract_emission_data(            # выбираем необходимые столбцы (+ подсчет допов)
+                data_reader.read_csv_chunks(chunksize=1000))) # читаем чанк в 1000 строк
         
-        # Задание 1: Агрегация данных. 3 самые «зеленые» и 3 самые «грязные» страны
-        country_data = DataProcessor.aggregate_by_country([time_series_data])
-        analysis_results = DataProcessor.analyze_emissions(country_data)
+        # Задание 1: Агрегация данных. 3 самые «зеленые» и 3 самые «грязные» страны. Общие ВВП (GDP) и общие выбросы (за все время)
+        analysis_results = DP.analyze_emissions(DP.aggregate_by_country(time_series_data))
         
         # Задание 2: Дисперсия и доверительный интервал. 3 страны с наибольшим и 3 с наименьшим разбросом суммы выбросов
-        variance_results = DataProcessor.analyze_emissions_variance(time_series_data)
-        confidence_results = DataProcessor.analyze_emissions_with_confidence(time_series_data)
+        variance_results = DP.analyze_emissions_variance(time_series_data)
+        confidence_results = DP.analyze_emissions_with_confidence(time_series_data)
         
-        # Задание 3: Временные ряды и скользящее среднее. Общие ВВП (GDP) и общие выбросы
-        temporal_results = DataProcessor.analyze_temporal_trends(time_series_data, window_size=5)
+        # Задание 3: Временные ряды и скользящее среднее. Общие ВВП (GDP) и общие выбросы (по годам)
+        temporal_results = DP.analyze_temporal_trends(time_series_data, window_size=5)
         
-        # Дополнительное задание: Корреляция между населением страны и количеством выбрасываемых парниковых газов
-        correlation = DataProcessor.calculate_correlation(data_reader, ['Country.Population', 'Emissions.Production.CO2.Total'])
+        # Дополнительное задание: Корреляция между населением страны и количеством выбрасываемых парниковых газов (parquet)
+        correlation = DP.calculate_correlation(data_reader, ['Country.Population', 'Emissions.Production.CO2.Total'])
         analysis_results['correlation_population_emissions'] = correlation
         
         # Вывод результатов
