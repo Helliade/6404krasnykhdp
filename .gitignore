@@ -8,3 +8,23 @@ __pycache__/
 .flake8
 processed_images/
 test_images/
+
+# Логи
+logs/
+*.log
+
+# Питоновские кэши
+*.py[cod]
+*$py.class
+
+# Временные файлы
+*.tmp
+*.temp
+
+# IDE
+*.swp
+*.swo
+
+# Окружение
+env/
+.venv/

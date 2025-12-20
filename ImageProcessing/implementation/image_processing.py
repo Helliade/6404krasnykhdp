@@ -16,13 +16,15 @@
 
 import cv2
 import time as t
-
-import interfaces
-
+import logging
 import numpy as np
 
+# Логгер для модуля
+logger = logging.getLogger(__name__)
 
-class ImageProcessing(interfaces.IImageProcessing):
+from ..interfaces.i_image_processing import IImageProcessing
+
+class ImageProcessing(IImageProcessing):
     """
     Реализация интерфейса IImageProcessing с использованием библиотеки OpenCV.
 
@@ -64,6 +66,7 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение после применения свёртки.
         """
+        logger.debug(f"Начало свертки, variant={variant}, shape={image.shape}, kernel shape={kernel.shape}")
 
         start, end = 0.0, 0.0
         start = t.time()
@@ -73,7 +76,9 @@ class ImageProcessing(interfaces.IImageProcessing):
         output_image = output_image.astype(np.uint8) # Возвращаем изображение в формате uint8
 
         end = t.time()
-        print(f"Execution time: {end - start}")
+
+        logger.debug(f"Свертка завершена за {end - start:.4f} секунд, variant={variant}")
+        # print(f"Свертка завершена за {end - start:.4f} секунд, variant={variant}")
 
         return output_image
 
@@ -95,6 +100,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение после применения свёртки.
         """
+        logger.debug(f"Внутренняя свертка, variant={variant}")
+
         if variant == "new":
 
             kernel = np.flipud(np.fliplr(kernel)) # 180° поворот
@@ -102,17 +109,23 @@ class ImageProcessing(interfaces.IImageProcessing):
             pad = k_size // 2
 
             if image.ndim == 2:
+                logger.debug("Обработка черно-белого изображения (2D)")
                 padded = np.pad(image, pad, mode='reflect')
                 output_image = self._convolution_2d(padded, kernel, pad)
 
             else:
+                logger.debug(f"Обработка цветного изображения (3D), каналов: {image.shape[2]}")
+                output_image = np.zeros_like(image, dtype=np.float64)
+
                 for channel in range(image.shape[2]):
+                    logger.debug(f"Обработка канала {channel}")
                     padded = np.pad(image[:, :, channel], pad, mode='reflect')
                     output_image[:, :, channel] = self._convolution_2d(padded, kernel, pad)
         
         else:
             output_image = cv2.filter2D(image, -1, kernel)
 
+        logger.debug(f"Внутренняя свертка завершена, output shape={output_image.shape}")
         return output_image    
 
     def _convolution_2d(self, 
@@ -133,6 +146,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         """
         h, w = padded_image.shape
         output_image = np.zeros((h - 2 * pad, w - 2 * pad), dtype=np.float64)
+
+        logger.debug(f"2D свертка, размер: {h}x{w}, pad: {pad}")
 
         for i in range(pad, h - pad):
             for j in range(pad, w - pad):
@@ -155,6 +170,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Одноканальное изображение в оттенках серого.
         """
+        logger.debug(f"RGB to grayscale, variant={variant}, shape={image.shape}")
+
         start, end = 0.0, 0.0
         start = t.time()
 
@@ -163,7 +180,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         output_image = output_image.astype(np.uint8) # Возвращаем изображение в формате uint8
         
         end = t.time()
-        print(f"Execution time: {end - start}")
+        logger.debug(f"RGB to grayscale завершено за {end - start:.4f} секунд")
+        # print(f"RGB to grayscale завершено за {end - start:.4f} секунд")
 
         return output_image
     
@@ -182,6 +200,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Одноканальное изображение в оттенках серого.
         """
+        logger.debug(f"Внутреннее RGB to grayscale, variant={variant}")
+
         if variant == "new":
 
             if image.ndim == 2:
@@ -213,6 +233,7 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение после гамма-коррекции.
         """
+        logger.debug(f"Гамма-коррекция, variant={variant}, shape={image.shape}")
 
         start, end = 0.0, 0.0
         start = t.time()
@@ -220,7 +241,9 @@ class ImageProcessing(interfaces.IImageProcessing):
         output_image = self._gamma_correction(image, gamma, variant).astype(np.uint8)
         
         end = t.time()
-        print(f"Execution time: {end - start}")
+
+        logger.debug(f"Гамма-коррекция завершена за {end - start:.4f} секунд")
+        # print(f"Гамма-коррекция завершена за {end - start:.4f} секунд")
 
         return output_image
 
@@ -241,6 +264,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение после гамма-коррекции.
         """
+        logger.debug(f"Внутренняя гамма-коррекция, variant={variant}")
+
         if variant == "new":
 
             if image.size == 0:
@@ -271,6 +296,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Одноканальное изображение с выделенными границами.
         """
+        logger.debug(f"Обнаружение границ, variant={variant}, shape={image.shape}")
+
         start, end = 0.0, 0.0
         start = t.time()
 
@@ -290,7 +317,9 @@ class ImageProcessing(interfaces.IImageProcessing):
              output_image = cv2.Canny(gray, 100, 200)
 
         end = t.time()
-        print(f"Execution time: {end - start}")
+
+        logger.debug(f"Обнаружение границ завершено за {end - start:.4f} секунд")
+        # print(f"Обнаружение границ завершено за {end - start:.4f} секунд")
         
         return output_image
     
@@ -305,6 +334,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             tuple: Кортеж с двумя массивами np.ndarray, отражающими градиенты на изображении.
         """
+        logger.debug(f"Внутренние градиенты Собеля")
+
         sobel_x = np.array([[-1, 0, 1],
                            [-2, 0, 2],
                            [-1, 0, 1]], dtype=np.float64)
@@ -330,6 +361,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение с самыми сильными границами.
         """
+        logger.debug(f"Внутреннее подавление немаксимумов")
+
         mag_min, mag_max = magnitude.min(), magnitude.max()
         if mag_max > mag_min:  # нормализуем, избегаем деления на ноль
             magnitude = (magnitude - mag_min) / (mag_max - mag_min)
@@ -376,6 +409,8 @@ class ImageProcessing(interfaces.IImageProcessing):
             np.ndarray: Изображение с границами с пороговым значением выше high_threshold и прилежащие к ним с пороговым значением 
         выше low_threshold.
         """       
+        logger.debug(f"Внутренний гистерезис")
+
         strong_edges = (image >= high_threshold)
         weak_edges = (image >= low_threshold) & (image < high_threshold)
         edges = strong_edges.astype(np.uint8) * 255
@@ -410,6 +445,8 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение с выделенными углами (красные точки).
         """
+        logger.debug(f"Обнаружение углов, variant={variant}, shape={image.shape}")
+
         start, end = 0.0, 0.0
         start = t.time()
 
@@ -451,7 +488,9 @@ class ImageProcessing(interfaces.IImageProcessing):
             output_image = result
 
         end = t.time()
-        print(f"Execution time: {end - start}")
+
+        logger.debug(f"Обнаружение углов завершено за {end - start:.4f} секунд")
+        # print(f"Обнаружение углов завершено за {end - start:.4f} секунд")
 
         return output_image
 
@@ -468,4 +507,6 @@ class ImageProcessing(interfaces.IImageProcessing):
         Returns:
             np.ndarray: Изображение с выделенными окружностями.
         """
+        logger.warning("Попытка вызова нереализованного метода circle_detection")
+        
         raise NotImplementedError("Метод обнаружения окружностей пока не реализован.")

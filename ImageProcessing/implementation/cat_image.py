@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Union, Optional
 import cv2
-from interfaces.i_image_processing import ICatImage
-from implementation.image_processing import ImageProcessing
+from ..interfaces.i_image_processing import ICatImage
+from .image_processing import ImageProcessing
 
 class CatImage(ICatImage):
     """Наследуемся от абстрактного базового класса для изображений по заданию из 2 ЛР."""
