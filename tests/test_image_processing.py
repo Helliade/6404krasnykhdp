@@ -2,7 +2,7 @@
 Тесты для класса ImageProcessing.
 
 # Запустить тест как модуль
-python -m ImageProcessing.tests.test_image_processing
+python -m tests.test_image_processing
 """
 
 import unittest

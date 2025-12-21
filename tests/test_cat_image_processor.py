@@ -2,7 +2,7 @@
 Тесты для класса CatImageProcessor.
 
 # Запустить тест как модуль
-python -m ImageProcessing.tests.test_cat_image_processor
+python -m tests.test_cat_image_processor
 """
 
 import unittest

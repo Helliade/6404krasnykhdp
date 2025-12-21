@@ -25,7 +25,7 @@ if __name__ == "__main__":
     loader = unittest.TestLoader()
     
     # Находим все тесты в папке tests
-    start_dir = os.path.join(os.path.dirname(__file__), 'ImageProcessing', 'tests')
+    start_dir = os.path.join(os.path.dirname(__file__), 'tests')
     suite = loader.discover(start_dir, pattern='test_*.py')
     
     # Запускаем тесты

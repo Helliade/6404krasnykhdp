@@ -3,7 +3,7 @@
 
 Запуск:
 cd D:\TehProg_Py\6404krasnykhdp
-python -m ImageProcessing.tests.test_cat_image
+python -m tests.test_cat_image
 """
 
 import unittest
